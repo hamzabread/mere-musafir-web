@@ -2,6 +2,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import Link from 'next/link'
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +11,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const signUp = () => {
+    setTimeout(() => {
+        window.location.href = "/signup";
+      }, 1500);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,12 +176,12 @@ const Login = () => {
           <div className="text-center space-y-3 border-t border-gray-200 pt-6">
             <p className="text-gray-600 text-sm">
               Don't have an account?{" "}
-              <a
-                href="#"
+              <Link
+                href="/signup"
                 className="text-purple-600 hover:text-purple-700 font-semibold transition-colors"
               >
                 Sign up
-              </a>
+              </Link>
             </p>
             <a
               href="#"

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { LogOut, LogIn, Compass } from 'lucide-react';
+import Link from 'next/link'
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -48,13 +49,13 @@ const Navbar = () => {
                 Logout
               </button>
             ) : (
-              <button
-                onClick={handleLogin}
+              <Link
+                href="/login"
                 className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 border border-white/30 backdrop-blur-sm"
               >
                 <LogIn className="w-5 h-5" />
                 Login
-              </button>
+              </Link>
             )}
           </div>
         </div>
