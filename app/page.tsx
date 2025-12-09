@@ -227,7 +227,7 @@ const HomePage = () => {
           <>
             {/* Search Bar */}
             <div className="relative mb-8">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 w-5 h-5" />
+              <Search className="absolute z-10 left-4 top-1/2 -translate-y-1/2 text-white/60 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search trips by title, location, or description..."
