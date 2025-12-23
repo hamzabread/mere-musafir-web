@@ -13,11 +13,12 @@ const HomePage = () => {
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     location: '',
     dates: '',
-    imageurl: '',
+    image: null,
     maxparticipants: 0,
     description: '',
     budget: '',
@@ -106,6 +107,30 @@ const HomePage = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        image: file
+      }));
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
   const handleCreateTrip = async (e) => {
     e.preventDefault();
     
@@ -115,20 +140,36 @@ const HomePage = () => {
     }
 
     try {
+      // Create FormData for multipart/form-data
+      const fd = new FormData();
+      fd.append('title', formData.title);
+      fd.append('location', formData.location);
+      fd.append('dates', formData.dates);
+      fd.append('maxparticipants', formData.maxparticipants);
+      fd.append('description', formData.description);
+      fd.append('budget', formData.budget);
+      fd.append('duration', formData.duration);
+      fd.append('triptype', formData.triptype);
+      
+      // Append image if provided
+      if (formData.image) {
+        fd.append('image', formData.image);
+      }
+
       const response = await fetch(
         'https://backend-production-b554.up.railway.app/trips/',
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'x-user-id': userId
           },
-          body: JSON.stringify(formData)
+          body: fd
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to create trip');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to create trip');
       }
 
       setShowCreateModal(false);
@@ -136,7 +177,7 @@ const HomePage = () => {
         title: '',
         location: '',
         dates: '',
-        imageurl: '',
+        image: null,
         maxparticipants: 0,
         description: '',
         budget: '',
@@ -144,10 +185,11 @@ const HomePage = () => {
         triptype: '',
         activities: []
       });
+      setImagePreview(null);
       
       fetchTrips();
     } catch (err) {
-      setError('Failed to create trip. Please try again.');
+      setError(err.message || 'Failed to create trip. Please try again.');
       console.error(err);
     }
   };
@@ -156,7 +198,7 @@ const HomePage = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'maxparticipants' || name === 'duration' ? parseInt(value) : value
+      [name]: name === 'maxparticipants' || name === 'duration' ? (value ? parseInt(value) : 0) : value
     }));
   };
 
@@ -404,11 +446,14 @@ const HomePage = () => {
       {/* Create Trip Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-96 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex justify-between items-center">
               <h3 className="text-2xl font-bold text-white">Create a New Trip</h3>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setImagePreview(null);
+                }}
                 className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
               >
                 ✕
@@ -444,14 +489,47 @@ const HomePage = () => {
                   required
                   className="px-4 py-2 border text-black border-gray-300 placeholder:text-[#666] rounded-lg focus:border-purple-600 focus:outline-none"
                 />
-                <input
-                  type="url"
-                  name="imageurl"
-                  placeholder="Image URL"
-                  value={formData.imageurl}
-                  onChange={handleInputChange}
-                  className="col-span-2 px-4 py-2 text-black border border-gray-300 placeholder:text-[#666] rounded-lg focus:border-purple-600 focus:outline-none"
-                />
+
+                {/* Image Upload */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Trip Image
+                  </label>
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagePreview(null);
+                          setFormData(prev => ({ ...prev, image: null }));
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-600 transition-colors cursor-pointer"
+                      onClick={() => document.getElementById('imageInput').click()}
+                    >
+                      <p className="text-gray-600 font-medium mb-2">Click to upload or drag and drop</p>
+                      <p className="text-gray-500 text-sm">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                  )}
+                  <input
+                    id="imageInput"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </div>
+
                 <input
                   type="text"
                   name="description"
@@ -502,7 +580,10 @@ const HomePage = () => {
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setImagePreview(null);
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
                 >
                   Cancel
